@@ -1,9 +1,12 @@
+import { INTERNALS } from "next/dist/server/web/spec-extension/request";
 import Head from "next/head";
 import Link from "next/link";
+import Header from "../src/components/Header";
 import styles from "../styles/Home.module.css";
 
-export default function Home({ posts }) {
-  console.log(posts);
+export default function Home({ posts, menus }) {
+  const menu = menus.edges[0].node.menuItems.edges;
+  console.log(menu);
   return (
     <div className={styles.container}>
       <Head>
@@ -12,13 +15,23 @@ export default function Home({ posts }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <Header />
+      <nav>
+        {menu.map((item) => {
+          return (
+            <Link href={item.node.path} key={item.node.id}>
+              <a>{item.node.label}</a>
+            </Link>
+          );
+        })}
+      </nav>
       <main className={styles.main}>
         <h1 className={styles.title}>Hello</h1>
         <ul>
           {posts.nodes.map((post) => {
             return (
               <li key={post.slug}>
-                <Link href={`/posts/${post.slug}`}>
+                <Link href={`/works/${post.slug}`}>
                   <a>{post.title}</a>
                 </Link>
               </li>
@@ -37,6 +50,23 @@ export async function getStaticProps() {
     body: JSON.stringify({
       query: `
         query AllPostsQuery {
+          menus(where: {location: PRIMARY}) {
+            edges {
+              node {
+                menuItems {
+                  edges {
+                    node {
+                      id
+                      url
+                      title
+                      path
+                      label
+                    }
+                  }
+                }
+              }
+            }
+          }
           posts {
             nodes {
               slug
@@ -49,6 +79,6 @@ export async function getStaticProps() {
   });
   const json = await res.json();
   return {
-    props: { posts: json.data.posts },
+    props: { posts: json.data.posts, menus: json.data.menus },
   };
 }
